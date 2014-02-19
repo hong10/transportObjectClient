@@ -20,10 +20,7 @@ import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.dexcodec.FileTransportCodecFactory;
-import com.alibaba.dexcodec.FileTransportDecoder;
-import com.alibaba.dexcodec.FileTransportEncoder;
-import com.alibaba.domain.FileResponse;
+import com.alibaba.domain.MyRequestObject;
 import com.alibaba.domain.MyResponseObject;
 
 public class MyClient {
@@ -38,12 +35,6 @@ public class MyClient {
 		connector.getFilterChain().addLast("codec",
 				new ProtocolCodecFilter(new ObjectSerializationCodecFactory()));
 		
-		connector.getFilterChain()
-		.addLast(
-				"protocol",
-				new ProtocolCodecFilter(new FileTransportCodecFactory(
-						new FileTransportEncoder(),
-						new FileTransportDecoder())));
 
 		connector.setHandler(new IoHandlerAdapter() {
 
@@ -53,18 +44,13 @@ public class MyClient {
 
 			@Override
 			public void sessionOpened(IoSession session) throws Exception {
-//				MyRequestObject myObj = new MyRequestObject("my name",
-//						"my value");
-//
-//				session.write(myObj);
+				MyRequestObject myObj = new MyRequestObject("my name",
+						"my value");
+
+				session.write(myObj);
 				
 				
 				System.out.println("客户端连接打开");
-				/*FileRequest fr = new FileRequest();
-				fr.setFileName("123.jpg");
-				session.write(fr);*/
-			FileResponse fr = new FileResponse(null, 0x11);
-				session.write(fr);
 			}
 
 			@Override
@@ -87,69 +73,11 @@ public class MyClient {
 			public void messageReceived(IoSession session, Object message)
 					throws Exception {
 
-
-				if(message instanceof FileResponse){
-					/*接收信息转化为FileResponse*/
-					FileResponse frs = (FileResponse)message;
-					
-//					frs.setFileName("aaa.png");
-					String newFile = "D:\\tasklist_client";
-					
-					int order = frs.getOrder();
-					
-					System.out.println(order);
-					
-					if(order == 17){
-						/*打开文件并创建输出流*/
-						File file = new File(newFile);
-						FileOutputStream fos = null;
-						try {
-						/*文件不存在创建一个新的文件*/
-						if(!file.exists())
-							file.createNewFile(); 
-							fos = new FileOutputStream(file, false);
-							ByteBuffer bf = frs.getFileContents();
-							bf.flip();
-							byte[] b = new byte[bf.limit()];
-							
-							System.out.println(b.length);
-							
-							for(int i=0;i<bf.limit();i++){
-								b[i] = bf.get();
-							}
-							System.out.println("传输长度： "+bf.limit());
-							fos.write(b,4,b.length-4);
-							fos.flush();
-							//System.out.println("客户端请求成功");
-							
-							System.out.println("传输完毕");
-						}catch(Exception e){
-							e.printStackTrace();
-						}finally{
-							try {
-								fos.close();
-							} catch (IOException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-						}
-					}else{
-						try {
-							throw new Exception("指令错误");
-						} catch (Exception e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-				}else{
-				
-				
 				
 					MyResponseObject myResObj = (MyResponseObject) message;
 					logger.info("Received " + myResObj);
 					// session.close(true);
-
-				}
+				
 			}
 
 			@Override
@@ -162,11 +90,10 @@ public class MyClient {
 		IoSession session = null;
 		try {
 			ConnectFuture future = connector.connect(new InetSocketAddress(
-					"localhost", 9999));
+					"localhost", 10001));
 			future.awaitUninterruptibly();
 			session = future.getSession();
 
-			// ������Ϣ�������
 			BufferedReader bufferedReader = new BufferedReader(
 					new InputStreamReader(System.in));
 			while (true) {
